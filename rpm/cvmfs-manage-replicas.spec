@@ -8,7 +8,7 @@ BuildArch: noarch
 Group: Applications/System
 License: BSD
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Source0: https://github.com/cvmfs-contrib/%{name}/archive/%{name}-%{version}.tar.gz
+Source0: https://github.com/cvmfs-contrib/%{name}/archive/v%{version}.tar.gz
 
 Requires: python-anyjson
 
