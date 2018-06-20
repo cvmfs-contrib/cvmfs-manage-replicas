@@ -1,0 +1,223 @@
+#!/usr/bin/python
+#
+# Manage adding and removing CVMFS replicas based on a configuration
+#  file and the repositories list from stratum 0s or other stratum 1s
+# Written by Dave Dykstra, February 2017
+
+from optparse import OptionParser
+import urllib2
+import sys
+import os
+import time
+import anyjson
+import fnmatch
+
+prog = 'manage-replicas'
+addcmd = 'add-repository @fqrn@ @url@'
+remcmd = 'remove-repository -f @fqrn@'
+replist = ''
+source = ''
+keypath = ''
+excludes = []
+oldrepos = []
+repospecs = {}
+replicalist = []
+
+usagestr = "Usage: %prog [-h ] [ other_options ]\n" \
+           "    Use -h to see help"
+parser = OptionParser(usage=usagestr, prog=prog)
+parser.add_option("-f", "--config",
+                  metavar="file", default="/etc/cvmfs/manage-replicas.conf",
+                  help="use file as configuration file. Default value: /etc/cvmfs/manage-replicas.conf")
+parser.add_option("-n", "--dry-run",
+                  action="store_true", default=False,
+                  help="Show what would be done, don't actually do it")
+parser.add_option("-l", "--list",
+                  action="store_true", default=False,
+                  help="Show full source url of all repos and exit")
+parser.add_option("-r", "--remove",
+                  action="store_true", default=False,
+                  help="Remove repositories that don't belong, don't just warn about them")
+parser.add_option("-c", "--continue-failed",
+                  action="store_true", default=False,
+                  help="Continue failed initial snapshots, replacing url with \'continue\'")
+parser.add_option("-d", "--repo-directory",
+                  metavar="dir", default='/srv/cvmfs',
+                  help="Directory to find repositories in (for -c option)")
+(options, args) = parser.parse_args(sys.argv)
+
+def logmsg(msg):
+  print time.asctime(time.localtime(time.time())) + ' ' + msg
+  sys.stdout.flush()
+
+def fatal(msg, code=1):
+  print >> sys.stderr, prog + ": " + msg
+  sys.exit(code)
+
+def efatal(msg, e, code=1):
+  fatal(msg + ': ' + type(e).__name__ + ': ' + str(e), code)
+
+# read the config file
+try:
+  fd = open(options.config, 'r')
+  lines = fd.readlines()
+  fd.close()
+except Exception, e:
+  efatal('could not open config file', e)
+
+#
+# go through the config file lines
+#
+linenum = 0
+
+def configfatal(msg):
+  fatal(options.config + ' line ' + str(linenum) + ': ' + msg)
+
+if not options.list:
+  logmsg('Starting')
+
+# find out existing repository names
+for dir in os.listdir('/etc/cvmfs/repositories.d'):
+  if os.path.exists('/etc/cvmfs/repositories.d/' + dir + '/replica.conf'):
+    oldrepos.append(dir)
+
+def excluded(repo):
+  for exclude in excludes:
+    if fnmatch.fnmatch(repo, exclude):
+      return True
+  return False
+
+# go through the config file
+for line in lines:
+  linenum += 1
+  # remove comments and trailing whitespace
+  ihash = line.find('#')
+  if ihash >= 0:
+    line = line[0:ihash]
+  line = line.rstrip()
+  if line == "":
+    continue
+  (key, value) = line.split(None, 1)
+  if key == 'addcmd':
+    addcmd = value
+  elif key == 'remcmd':
+    remcmd = value
+  elif key == 'replist':
+    try:
+      response = urllib2.urlopen(value)
+      reps = anyjson.deserialize(response.read())
+    except Exception, e:
+      efatal('failure reading and/or decoding ' + value, e)
+    replicalist = []
+    for typ in ['replicas', 'repositories']:
+      for rep in reps[typ]:
+        replicalist.append(rep['name'])
+  elif key == 'source':
+    source = value
+  elif key == 'keypath':
+    keypath = value
+  elif key == 'exclude':
+    for exclude in value.split():
+      excludes.append(exclude)
+  elif key == 'repos':
+    if source == '':
+      configfatal('No source specified before repos')
+    for repo in value.split():
+      if '*' in repo or '?' in repo or '[' in repo or ']' in repo:
+        # match against a replist
+        if len(replicalist) == 0:
+          configfatal('No replist specified before repos')
+        for replica in replicalist:
+          if fnmatch.fnmatch(replica, repo):
+            if not excluded(replica):
+              repospecs[replica] = [source, keypath]
+        if not options.list:
+          # look for extra repositories matching this wildcard
+          for oldrepo in oldrepos:
+            if oldrepo in repospecs:
+              continue
+            if excluded(oldrepo):
+              continue
+            if fnmatch.fnmatch(oldrepo, repo):
+              if options.remove:
+                cmd = remcmd.replace('@fqrn@',oldrepo)
+                logmsg('Running ' + cmd)
+                if not options.dry_run:
+                  code = os.system(cmd)
+                  if code != 0:
+                    logmsg('Remove failed with exit code ' + hex(code))
+              else:
+                logmsg('WARNING: extra repository ' + oldrepo + ' matches managed repos ' + repo)
+      else:
+        # no wildcards, just see if it has to be excluded
+        #  although that's rather unlikely
+        if not excluded(repo):
+          repospecs[repo] = [source, keypath]
+      # exclude this repo pattern from future matches
+      excludes.append(repo)
+  else:
+    configfatal('unrecognized keyword: ' + key)
+
+if options.list:
+  for repo, value in sorted(repospecs.iteritems()):
+    source = value[0]
+    print source + '/cvmfs/' + repo
+  sys.exit(0)
+
+
+for repo, value in sorted(repospecs.iteritems()):
+  (url, keypath) = value
+  serverconf = '/etc/cvmfs/repositories.d/' + repo + '/server.conf'
+  replicaconf = '/etc/cvmfs/repositories.d/' + repo + '/replica.conf'
+  addrepo = True
+  if os.path.exists(serverconf):
+    addrepo = False
+    # Repo exists.  If there's no replica.conf, it may
+    #   be blanked so skip that.
+    # If replica.conf exists and the full url does not
+    #   match what is in server.conf, edit server.conf.
+    fullurl = url + '/cvmfs/' + repo
+    if os.path.exists(replicaconf):
+      contents = open(serverconf).read()
+      start = contents.find('CVMFS_STRATUM0=')
+      if start > 0:
+        start += len('CVMFS_STRATUM0=')
+        end = contents.find('\n', start)
+        if contents.find('{', start, end) >= 0:
+          #
+          # look past through the hyphen sign inside the curly brackets
+          # this is a convention in the cvmfs-hastratum1 package
+          start = contents.find('-', start, end)
+          if (start > 0):
+            start += 1
+      if start > 0:
+        if fullurl != contents[start:start+len(fullurl)]:
+          end = contents.find('}', start, end)
+          if end < 0:
+            end = contents.find('\n',start)
+          if (end > 0):
+            contents = contents[:start] + fullurl + contents[end:]
+            logmsg('Setting new url for ' + repo + ': ' + fullurl)
+            if not options.dry_run:
+              open(serverconf, 'w').write(contents)
+      if options.continue_failed and \
+          not os.path.exists(options.repo_directory +'/' + repo + '/.cvmfs_last_snapshot') and \
+          not os.path.exists('/var/spool/cvmfs/' + repo + '/is_snapshotting.lock') and \
+          not os.path.exists('/var/spool/cvmfs/' + repo + '/is_updating.lock'):
+        addrepo = True
+        url = 'continue'
+  if addrepo:
+    cmd = addcmd.replace('@url@', url).replace('@fqrn@', repo).replace('@keypath@', keypath)
+    logmsg('Running ' + cmd)
+    if not options.dry_run:
+      code = os.system(cmd)
+      if code != 0:
+        logmsg('Add failed with exit code ' + hex(code))
+        if not options.continue_failed:
+          cmd = remcmd.replace('@fqrn@',repo)
+          logmsg('Running ' + cmd)
+          code = os.system(cmd)
+          if code != 0:
+            logmsg('Undo failed with exit code ' + hex(code))
+
+logmsg('Finished')

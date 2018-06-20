@@ -1,0 +1,25 @@
+#!/bin/bash
+# call this from cron to manage the logs of parallel manage-replicas
+
+MAXPARALLELMANAGE=${MAXPARALLELMANAGE:-4}
+
+PATH=$PATH:/usr/sbin
+LOGF=/var/log/cvmfs/manage-replicas.log
+mkdir -p /var/run/cvmfs
+N=0
+while [ "$N" -lt "$MAXPARALLELMANAGE" ]; do
+  let FN=$N+1
+  TMPFILE=/var/run/cvmfs/manage-replicas.log.$FN
+  if [ ! -f "$TMPFILE" ]; then
+    break
+  fi
+  N=$FN
+done
+if [ "$N" -eq "$MAXPARALLELMANAGE" ]; then
+  echo "`date` skipping manage-replicas, $N already running" >>$LOGF
+  exit
+fi
+trap "rm -f $TMPFILE" 0
+echo "`date` Sending output to $TMPFILE" >>$LOGF
+manage-replicas "$@" >$TMPFILE 2>&1
+cat $TMPFILE >>$LOGF
