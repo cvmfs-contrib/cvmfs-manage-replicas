@@ -130,7 +130,7 @@ for line in lines:
         for replica in replicalist:
           if fnmatch.fnmatch(replica, repo):
             if not excluded(replica):
-              repospecs[replica] = [source, keypath]
+              repospecs[replica] = [source, keypath, addcmd, remcmd]
         if not options.list:
           # look for extra repositories matching this wildcard
           for oldrepo in oldrepos:
@@ -152,7 +152,7 @@ for line in lines:
         # no wildcards, just see if it has to be excluded
         #  although that's rather unlikely
         if not excluded(repo):
-          repospecs[repo] = [source, keypath]
+          repospecs[repo] = [source, keypath, addcmd, remcmd]
       # exclude this repo pattern from future matches
       excludes.append(repo)
   else:
@@ -166,7 +166,7 @@ if options.list:
 
 
 for repo, value in sorted(repospecs.iteritems()):
-  (url, keypath) = value
+  (url, keypath, addcmd, remcmd) = value
   serverconf = '/etc/cvmfs/repositories.d/' + repo + '/server.conf'
   replicaconf = '/etc/cvmfs/repositories.d/' + repo + '/replica.conf'
   addrepo = True
