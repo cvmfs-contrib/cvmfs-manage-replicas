@@ -29,7 +29,7 @@ install -p -m 555 manage-replicas manage-replicas-log $RPM_BUILD_ROOT%{_sbindir}
 %{_sbindir}/*
 
 %changelog
-* Mon May 13 2018 Dave Dykstra <dwd@fnal.gov> - 1.1-1
+* Mon May 13 2019 Dave Dykstra <dwd@fnal.gov> - 1.1-1
 - Apply addcmd and remcmd sequentially, so different values can be used
   by different repositories.
 
