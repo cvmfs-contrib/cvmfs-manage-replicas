@@ -1,6 +1,6 @@
 Summary: Manage cvmfs replicas
 Name: cvmfs-manage-replicas
-Version: 1.0
+Version: 1.1
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -29,5 +29,9 @@ install -p -m 555 manage-replicas manage-replicas-log $RPM_BUILD_ROOT%{_sbindir}
 %{_sbindir}/*
 
 %changelog
+* Mon May 13 2018 Dave Dykstra <dwd@fnal.gov> - 1.1-1
+- Apply addcmd and remcmd sequentially, so different values can be used
+  by different repositories.
+
 * Wed Jun 20 2018 Dave Dykstra <dwd@fnal.gov> - 1.0-1
 - Initial packaging
