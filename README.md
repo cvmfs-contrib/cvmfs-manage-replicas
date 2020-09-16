@@ -26,3 +26,4 @@ With the huge numbers of files involved, that is pretty typical.
 The files can be re-downloaded from some other stratum1 by hand.
 
 You'll need to edit /etc/cvmfs/repositories.d/*/server.conf after completion to copy the CVMFS_STRATUM0 setting on each repository from your original machine.
+Alternatively, if you manage all your repositories via manage-replicas.conf, then when you copy manage-replicas.conf from your original machine the CVMFS_STRATUM0 settings will be automatically updated the next time manage-replicas runs.
