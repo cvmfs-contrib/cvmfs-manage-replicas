@@ -1,11 +1,12 @@
-cvmfs-manage-replicas
-=====================
+# cvmfs-manage-replicas
 
 For documentation on manage-replicas see the comments in [manage-replicas.conf](https://github.com/cvmfs-contrib/cvmfs-manage-replicas/blob/master/manage-replicas.conf).
 
 rpm distributions of this package for CentOS/RHEL are available in [cvmfs-contrib](https://cvmfs-contrib.githup.io).
 
 To invoke from cron, use the additional script manage-replicas-log which allows $MAXPARALLELMANAGE replicas to happen in parallel and combines their output in /var/log/cvmfs/manage-replicas.log.
+
+## Example -- rebuilding a stratum 1
 
 One simple way to use this package is as a way to rebuild a cvmfs stratum 1 from scratch, taking fresh snapshots of all the repositories off an old one called "stratum.one.fqdn".
 Assuming you have an 'add-repository' script as used by default for the addcmd, the configuration would look like this:
