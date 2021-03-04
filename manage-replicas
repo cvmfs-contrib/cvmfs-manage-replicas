@@ -193,6 +193,8 @@ for repo, value in sorted(repospecs.iteritems()):
         keysindir = []
         kss = keysource.split('/',3)
         try:
+          # NOTE: this api is only allowed to be used 60 times
+          #   per hour per IP address
           cmd = 'curl -m 10 -f -s ' + \
                   '-H "Accept: application/vnd.github.v3+json" ' + \
                   '"https://api.github.com/repos/' + \
