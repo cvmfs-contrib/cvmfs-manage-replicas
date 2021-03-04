@@ -10,6 +10,7 @@ import sys
 import os
 import time
 import anyjson
+import subprocess
 import fnmatch
 
 prog = 'manage-replicas'
@@ -18,6 +19,7 @@ remcmd = 'remove-repository -f @fqrn@'
 replist = ''
 source = ''
 keypath = ''
+keysource = ''
 excludes = []
 oldrepos = []
 repospecs = {}
@@ -116,6 +118,8 @@ for line in lines:
     source = value
   elif key == 'keypath':
     keypath = value
+  elif key == 'keysource':
+    keysource = value
   elif key == 'exclude':
     for exclude in value.split():
       excludes.append(exclude)
@@ -130,7 +134,7 @@ for line in lines:
         for replica in replicalist:
           if fnmatch.fnmatch(replica, repo):
             if not excluded(replica):
-              repospecs[replica] = [source, keypath, addcmd, remcmd]
+              repospecs[replica] = [source, keypath, keysource, addcmd, remcmd]
         if not options.list:
           # look for extra repositories matching this wildcard
           for oldrepo in oldrepos:
@@ -152,7 +156,7 @@ for line in lines:
         # no wildcards, just see if it has to be excluded
         #  although that's rather unlikely
         if not excluded(repo):
-          repospecs[repo] = [source, keypath, addcmd, remcmd]
+          repospecs[repo] = [source, keypath, keysource, addcmd, remcmd]
       # exclude this repo pattern from future matches
       excludes.append(repo)
   else:
@@ -165,8 +169,54 @@ if options.list:
   sys.exit(0)
 
 
+prevdomains = []
 for repo, value in sorted(repospecs.iteritems()):
-  (url, keypath, addcmd, remcmd) = value
+  (url, keypath, keysource, addcmd, remcmd) = value
+  domain = repo.split('.',1)[1]
+  if len(keysource) > 0 and domain not in prevdomains:
+    # this is fairly complicated so only check once per domain
+    prevdomains.append(domain)
+    # first make sure domain key exists
+    keydir = '/etc/cvmfs/keys'
+    if options.dry_run:
+      keydir = '/tmp'
+    if not os.path.isfile(keydir + '/' + domain + '.pub') and \
+        not os.path.isdir(keydir + '/' + domain):
+      # python2 https loading isn't reliable so drop to curl
+      pubfile = keydir + '/' + domain + '.pub '
+      if os.system('curl -m 10 -f -s -o ' + pubfile + \
+          ' https://raw.githubusercontent.com/' + keysource + \
+          '/' + domain + '.pub') == 0:
+        logmsg('Downloaded ' + pubfile)
+      else:
+        # use github api to list keys in a keydir
+        keysindir = []
+        kss = keysource.split('/',3)
+        try:
+          cmd = 'curl -m 10 -f -s ' + \
+                  '-H "Accept: application/vnd.github.v3+json" ' + \
+                  '"https://api.github.com/repos/' + \
+                  kss[0] + '/' + kss[1] + '/contents/' + kss[3] + \
+                  '/' + domain + '?ref=' + kss[2] + '"'
+          answer = subprocess.check_output(cmd, shell=True)
+        except:
+          pass
+        else:
+          arr = anyjson.deserialize(answer)
+          for rec in arr:
+            if 'name' in rec:
+              keysindir.append(rec['name'])
+        pubdir = keydir + '/' + domain
+        if len(keysindir) > 0:
+          os.mkdir(pubdir)
+        else:
+          logmsg('No pub key found for ' + domain)
+        for key in keysindir:
+          pubfile = pubdir + '/' + key
+          if os.system('curl -m 10 -f -s -o ' + pubfile + \
+              ' https://raw.githubusercontent.com/' + \
+              keysource + '/' + domain + '/' + key) == 0:
+            logmsg('Downloaded ' + pubfile)
   serverconf = '/etc/cvmfs/repositories.d/' + repo + '/server.conf'
   replicaconf = '/etc/cvmfs/repositories.d/' + repo + '/replica.conf'
   addrepo = True
@@ -207,7 +257,8 @@ for repo, value in sorted(repospecs.iteritems()):
         addrepo = True
         url = 'continue'
   if addrepo:
-    cmd = addcmd.replace('@url@', url).replace('@fqrn@', repo).replace('@keypath@', keypath)
+    repokeypath = keypath
+    cmd = addcmd.replace('@url@', url).replace('@fqrn@', repo).replace('@keypath@', repokeypath)
     logmsg('Running ' + cmd)
     if not options.dry_run:
       code = os.system(cmd)
