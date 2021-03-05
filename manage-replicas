@@ -168,6 +168,32 @@ if options.list:
     print source + '/cvmfs/' + repo
   sys.exit(0)
 
+# download a file from github, following symlinks
+def download_github_file(infile, outfile):
+  # python2 https loading isn't reliable so call out to curl
+  try:
+    cmd = 'curl -m 10 -f -s https://raw.githubusercontent.com/' + infile
+    answer = subprocess.check_output(cmd, shell=True)
+  except:
+    return False
+  if answer[-1] == '\n':
+    try:
+      with open('outfile', 'w') as fd:
+        fd.write(answer)
+    except:
+      logmsg('Error writing ' + outfile)
+      return False
+  else:
+    # does not end in newline, follow a symlink
+    infile = os.path.normpath(os.path.dirname(infile) + '/' + answer)
+    cmd = 'curl -m 10 -f -s -o ' + outfile + \
+                ' https://raw.githubusercontent.com/' + infile
+    if os.system(cmd) != 0:
+      logmsg('Error following symlink for ' + outfile + ' to ' + infile)
+      return False
+
+  logmsg('Downloaded ' + outfile)
+  return True
 
 prevdomains = []
 for repo, value in sorted(repospecs.iteritems()):
@@ -182,13 +208,8 @@ for repo, value in sorted(repospecs.iteritems()):
       keydir = '/tmp'
     if not os.path.isfile(keydir + '/' + domain + '.pub') and \
         not os.path.isdir(keydir + '/' + domain):
-      # python2 https loading isn't reliable so drop to curl
-      pubfile = keydir + '/' + domain + '.pub '
-      if os.system('curl -m 10 -f -s -o ' + pubfile + \
-          ' https://raw.githubusercontent.com/' + keysource + \
-          '/' + domain + '.pub') == 0:
-        logmsg('Downloaded ' + pubfile)
-      else:
+      pubpath = '/' + domain + '.pub '
+      if not download_github_file(keysource + pubpath, keydir + pubpath):
         # use github api to list keys in a keydir
         keysindir = []
         kss = keysource.split('/',3)
@@ -208,17 +229,14 @@ for repo, value in sorted(repospecs.iteritems()):
           for rec in arr:
             if 'name' in rec:
               keysindir.append(rec['name'])
-        pubdir = keydir + '/' + domain
+        pubdir = '/' + domain
         if len(keysindir) > 0:
-          os.mkdir(pubdir)
+          os.mkdir(keydir + pubdir)
         else:
           logmsg('No pub key found for ' + domain)
         for key in keysindir:
-          pubfile = pubdir + '/' + key
-          if os.system('curl -m 10 -f -s -o ' + pubfile + \
-              ' https://raw.githubusercontent.com/' + \
-              keysource + '/' + domain + '/' + key) == 0:
-            logmsg('Downloaded ' + pubfile)
+          pubpath = pubdir + '/' + key
+          download_github_file(keysource + pubpath, keydir + pubpath)
   serverconf = '/etc/cvmfs/repositories.d/' + repo + '/server.conf'
   replicaconf = '/etc/cvmfs/repositories.d/' + repo + '/replica.conf'
   addrepo = True
