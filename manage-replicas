@@ -46,6 +46,9 @@ parser.add_option("-c", "--continue-failed",
 parser.add_option("-d", "--repo-directory",
                   metavar="dir", default='/srv/cvmfs',
                   help="Directory to find repositories in (for -c option)")
+parser.add_option("-k", "--only-download-keys",
+                  action="store_true", default=False,
+                  help="Only download any missing keys, do not add replicas")
 (options, args) = parser.parse_args(sys.argv)
 
 def logmsg(msg):
@@ -237,6 +240,8 @@ for repo, value in sorted(repospecs.iteritems()):
         for key in keysindir:
           pubpath = pubdir + '/' + key
           download_github_file(keysource + pubpath, keydir + pubpath)
+  if options.only_download_keys:
+    continue
   serverconf = '/etc/cvmfs/repositories.d/' + repo + '/server.conf'
   replicaconf = '/etc/cvmfs/repositories.d/' + repo + '/replica.conf'
   addrepo = True
