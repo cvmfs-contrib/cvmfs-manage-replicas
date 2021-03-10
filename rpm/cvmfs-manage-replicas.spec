@@ -1,6 +1,6 @@
 Summary: Manage cvmfs replicas
 Name: cvmfs-manage-replicas
-Version: 1.4
+Version: 1.5
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -29,6 +29,9 @@ install -p -m 555 manage-replicas manage-replicas-log $RPM_BUILD_ROOT%{_sbindir}
 %{_sbindir}/*
 
 %changelog
+* Wed Mar 10 2021 Dave Dykstra <dwd@fnal.gov> - 1.5-1
+- Fix typo in downloaded .pub filename; remove ending blank
+
 * Tue Mar  9 2021 Dave Dykstra <dwd@fnal.gov> - 1.4-1
 - Fix typo in key storage that caused all key files to be called 'outfile'
   in current working directory
