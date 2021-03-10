@@ -211,7 +211,7 @@ for repo, value in sorted(repospecs.iteritems()):
       keydir = '/tmp'
     if not os.path.isfile(keydir + '/' + domain + '.pub') and \
         not os.path.isdir(keydir + '/' + domain):
-      pubpath = '/' + domain + '.pub '
+      pubpath = '/' + domain + '.pub'
       if not download_github_file(keysource + pubpath, keydir + pubpath):
         # use github api to list keys in a keydir
         keysindir = []
