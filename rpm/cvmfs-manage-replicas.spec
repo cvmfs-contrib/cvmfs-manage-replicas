@@ -34,7 +34,7 @@ install -p -m 555 manage-replicas manage-replicas-log $RPM_BUILD_ROOT%{_sbindir}
   in current working directory
 - Add manage-replicas -k/--only-download-keys option
 
-* Fri Mar  4 2021 Dave Dykstra <dwd@fnal.gov> - 1.3-1
+* Fri Mar  5 2021 Dave Dykstra <dwd@fnal.gov> - 1.3-1
 - Support following symlinks on github download
 
 * Thu Mar  4 2021 Dave Dykstra <dwd@fnal.gov> - 1.2-1
