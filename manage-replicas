@@ -110,7 +110,7 @@ for line in lines:
   elif key == 'replist':
     try:
       response = urllib.request.urlopen(value)
-      reps = anyjson.deserialize(response.read())
+      reps = anyjson.deserialize(response.read().decode())
     except Exception as e:
       efatal('failure reading and/or decoding ' + value, e)
     replicalist = []
