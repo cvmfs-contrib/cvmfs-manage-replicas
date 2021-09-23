@@ -1,0 +1,74 @@
+#!/bin/bash
+# Add a repository using standard cvmfs_server commands
+
+ME="`basename $0`"
+
+usage()
+{
+    echo "Usage: $ME reponame {http_url_of_repo_server|continue}" >&2
+    echo ' If the second parameter is "continue", only run snapshot on repo' >&2
+    exit 1
+}
+
+
+if [ $# != 2 ]; then
+    usage
+fi
+
+
+CREATEREPO=true
+REPONAME="$1"
+REPOURL=""
+case "$2" in
+    http://*) REPOURL="$2/cvmfs/$REPONAME";;
+    continue) CREATEREPO=false;;
+    *)  usage ;;
+esac
+
+set -e
+
+if $CREATEREPO; then
+    # create the replica
+    if [ -f /etc/cvmfs/repositories.d/$REPONAME/replica.conf ]; then
+        echo "Repository already exists, aborting" >&2
+        exit 1
+    fi
+    DOMAIN=${REPONAME#*.}
+    PUBKEY="/etc/cvmfs/keys/$DOMAIN.pub"
+    if [ ! -f "$PUBKEY" ]; then
+        PUBDIR="/etc/cvmfs/keys/$DOMAIN"
+        if [ -d "$PUBDIR" ]; then
+            PUBKEY="`echo $PUBDIR/*.pub|tr ' ' ':'`"
+        else
+            echo "$ME: $PUBKEY and $PUBDIR not found" >&2
+            exit 1
+        fi
+    fi
+    if [ -d /srv/cvmfs/$REPONAME ]; then
+        echo "Saving old /srv/cvmfs/$REPONAME data" >&2
+        if [ -d /srv/cvmfs/.$REPONAME.save ]; then
+            echo " ... but saved data already existed, aborting" >&2
+            exit 1
+        fi
+        mv /srv/cvmfs/$REPONAME /srv/cvmfs/.$REPONAME.save
+    fi
+    RET=0
+    if ! cvmfs_server add-replica -p -o root $REPOURL $PUBKEY$EXTRAPUBKEY; then
+        RET=1
+    fi
+    if [ -d /srv/cvmfs/.$REPONAME.save ]; then
+        echo "Restoring old /srv/cvmfs/$REPONAME data" >&2
+        rm -rf /srv/cvmfs/$REPONAME
+        mv /srv/cvmfs/.$REPONAME.save /srv/cvmfs/$REPONAME
+        if [ -f /srv/cvmfs/$REPONAME/.cvmfsreflog ]; then
+            echo "Removing ${REPONAME}'s .cvmfsreflog" >&2
+            rm /srv/cvmfs/$REPONAME/.cvmfsreflog
+        fi
+    fi
+    if [ $RET != 0 ]; then
+        exit $RET
+    fi
+fi
+
+# pull initial snapshot
+cvmfs_server snapshot $REPONAME
