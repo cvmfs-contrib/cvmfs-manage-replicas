@@ -1,6 +1,6 @@
 Summary: Manage cvmfs replicas
 Name: cvmfs-manage-replicas
-Version: 1.5
+Version: 1.6
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -10,7 +10,7 @@ License: BSD
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Source0: https://github.com/cvmfs-contrib/%{name}/archive/%{name}-%{version}.tar.gz
 
-Requires: python-anyjson
+Requires: python3
 
 %description
 Automates the addition and deletion of cvmfs stratum 1 replicas.
@@ -29,6 +29,9 @@ install -p -m 555 manage-replicas manage-replicas-log $RPM_BUILD_ROOT%{_sbindir}
 %{_sbindir}/*
 
 %changelog
+* Thu Sep 23 2021 Dave Dykstra <dwd@fnal.gov> - 1.6-1
+- Convert to python3
+
 * Wed Mar 10 2021 Dave Dykstra <dwd@fnal.gov> - 1.5-1
 - Fix typo in downloaded .pub filename; remove ending blank
 
