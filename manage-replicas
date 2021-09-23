@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Manage adding and removing CVMFS replicas based on a configuration
 #  file and the repositories list from stratum 0s or other stratum 1s
 # Written by Dave Dykstra, February 2017
 
 from optparse import OptionParser
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import sys
 import os
 import time
@@ -52,11 +52,11 @@ parser.add_option("-k", "--only-download-keys",
 (options, args) = parser.parse_args(sys.argv)
 
 def logmsg(msg):
-  print time.asctime(time.localtime(time.time())) + ' ' + msg
+  print(time.asctime(time.localtime(time.time())) + ' ' + msg)
   sys.stdout.flush()
 
 def fatal(msg, code=1):
-  print >> sys.stderr, prog + ": " + msg
+  print(prog + ": " + msg, file=sys.stderr)
   sys.exit(code)
 
 def efatal(msg, e, code=1):
@@ -67,7 +67,7 @@ try:
   fd = open(options.config, 'r')
   lines = fd.readlines()
   fd.close()
-except Exception, e:
+except Exception as e:
   efatal('could not open config file', e)
 
 #
@@ -109,9 +109,9 @@ for line in lines:
     remcmd = value
   elif key == 'replist':
     try:
-      response = urllib2.urlopen(value)
+      response = urllib.request.urlopen(value)
       reps = anyjson.deserialize(response.read())
-    except Exception, e:
+    except Exception as e:
       efatal('failure reading and/or decoding ' + value, e)
     replicalist = []
     for typ in ['replicas', 'repositories']:
@@ -166,9 +166,9 @@ for line in lines:
     configfatal('unrecognized keyword: ' + key)
 
 if options.list:
-  for repo, value in sorted(repospecs.iteritems()):
+  for repo, value in sorted(repospecs.items()):
     source = value[0]
-    print source + '/cvmfs/' + repo
+    print(source + '/cvmfs/' + repo)
   sys.exit(0)
 
 # download a file from github, following symlinks
@@ -199,7 +199,7 @@ def download_github_file(infile, outfile):
   return True
 
 prevdomains = []
-for repo, value in sorted(repospecs.iteritems()):
+for repo, value in sorted(repospecs.items()):
   (url, keypath, keysource, addcmd, remcmd) = value
   domain = repo.split('.',1)[1]
   if len(keysource) > 0 and domain not in prevdomains:
