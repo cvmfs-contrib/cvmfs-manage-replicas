@@ -179,6 +179,7 @@ def download_github_file(infile, outfile):
     answer = subprocess.check_output(cmd, shell=True)
   except:
     return False
+  answer = answer.decode()
   if answer[-1] == '\n':
     try:
       with open(outfile, 'w') as fd:
