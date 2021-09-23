@@ -36,9 +36,9 @@ On a big stratum 1 it will likely take several days or even a week,
 depending on the speed of the disk hardware and network. 
 
 If your `add-repository` script accepts `continue` as an option in place
-of the stratum one URL (as the provided script does), then add the
-`manage-replicas -c` option to enable restarting a big initial snapshot
-if it fails for some reason.
+of the stratum one URL (as the provided script does), then run
+`manage-replicas-log` with the `-c` option to enable restarting a big
+initial snapshot if it fails for some reason.
 This option implies `remcmd true` because otherwise a failure to add a
 repository causes it to be immediately removed.
 
