@@ -1,6 +1,6 @@
 Summary: Manage cvmfs replicas
 Name: cvmfs-manage-replicas
-Version: 1.6
+Version: 1.7
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -19,16 +19,24 @@ Automates the addition and deletion of cvmfs stratum 1 replicas.
 %setup -q
 
 %install
-mkdir -p $RPM_BUILD_ROOT/etc/cvmfs
-install -p -m 644 manage-replicas.conf $RPM_BUILD_ROOT/etc/cvmfs
+mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/cvmfs
+install -p -m 644 manage-replicas.conf $RPM_BUILD_ROOT/%{_sysconfdir}/cvmfs
 mkdir -p $RPM_BUILD_ROOT%{_sbindir}
 install -p -m 555 manage-replicas manage-replicas-log $RPM_BUILD_ROOT%{_sbindir}
+mkdir -p $RPM_BUILD_ROOT/%{_datadir}/cvmfs-manage-replicas
+install -p -m 555 add-repository remove-repository $RPM_BUILD_ROOT/%{_datadir}/cvmfs-manage-replicas
 
 %files
-%config(noreplace) /etc/cvmfs/*
+%config(noreplace) /%{_sysconfdir}/cvmfs/*
 %{_sbindir}/*
+%{_datadir}/*
 
 %changelog
+* Thu Sep 23 2021 Dave Dykstra <dwd@fnal.gov> - 1.7-1
+- Fix key storage for python3
+- Add add-repository and remove-repository scripts in
+  /usr/share/cvmfs-manage-replicas
+
 * Thu Sep 23 2021 Dave Dykstra <dwd@fnal.gov> - 1.6-1
 - Convert to python3
 
