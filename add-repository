@@ -53,7 +53,7 @@ if $CREATEREPO; then
         mv /srv/cvmfs/$REPONAME /srv/cvmfs/.$REPONAME.save
     fi
     RET=0
-    if ! cvmfs_server add-replica -p -o root $REPOURL $PUBKEY$EXTRAPUBKEY; then
+    if ! cvmfs_server add-replica -o root $REPOURL $PUBKEY$EXTRAPUBKEY; then
         RET=1
     fi
     if [ -d /srv/cvmfs/.$REPONAME.save ]; then
