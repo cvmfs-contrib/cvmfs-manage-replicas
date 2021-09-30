@@ -5,11 +5,18 @@ ME="`basename $0`"
 
 usage()
 {
-    echo "Usage: $ME reponame {http_url_of_repo_server|continue}" >&2
-    echo ' If the second parameter is "continue", only run snapshot on repo' >&2
+    echo "Usage: $ME [-p] reponame {http_url_of_repo_server|continue}" >&2
+    echo ' If the last parameter is "continue", only run snapshot on repo' >&2
+    echo ' If [-p] is given, pass it to cvmfs_server add-replica' >&2
     exit 1
 }
 
+
+ADDREPARGS=""
+case "$1" in
+    -p) ADDREPARGS="$1"; shift;;
+    -*) echo "Unrecognized option $1" >&2; usage;;
+esac
 
 if [ $# != 2 ]; then
     usage
@@ -53,7 +60,7 @@ if $CREATEREPO; then
         mv /srv/cvmfs/$REPONAME /srv/cvmfs/.$REPONAME.save
     fi
     RET=0
-    if ! cvmfs_server add-replica -o root $REPOURL $PUBKEY$EXTRAPUBKEY; then
+    if ! cvmfs_server add-replica $ADDREPARGS -o root $REPOURL $PUBKEY$EXTRAPUBKEY; then
         RET=1
     fi
     if [ -d /srv/cvmfs/.$REPONAME.save ]; then

@@ -1,6 +1,6 @@
 Summary: Manage cvmfs replicas
 Name: cvmfs-manage-replicas
-Version: 1.7
+Version: 1.8
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -32,6 +32,10 @@ install -p -m 555 add-repository remove-repository $RPM_BUILD_ROOT/%{_datadir}/c
 %{_datadir}/*
 
 %changelog
+* Thu Sep 30 2021 Dave Dykstra <dwd@fnal.gov> - 1.8-1
+- Make the -p option to cvmfs_server add-replica optional by making it a
+  non-default option to add-repository
+
 * Thu Sep 23 2021 Dave Dykstra <dwd@fnal.gov> - 1.7-1
 - Fix key storage for python3
 - Add add-repository and remove-repository scripts in
