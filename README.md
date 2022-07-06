@@ -1,6 +1,8 @@
 # cvmfs-manage-replicas
 
-For documentation on manage-replicas see the comments in
+This package makes managing cvmfs repository replication onto stratum 1s easy.
+
+For documentation see the comments in
 [manage-replicas.conf](https://github.com/cvmfs-contrib/cvmfs-manage-replicas/blob/master/manage-replicas.conf).
 
 rpm distributions of this package for CentOS/RHEL are available in
