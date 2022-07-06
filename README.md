@@ -1,6 +1,8 @@
 # cvmfs-manage-replicas
 
 This package makes managing cvmfs repository replication onto stratum 1s easy.
+It can discover when new repositories show up at their sources and
+automatically replicate them.
 
 For documentation see the comments in
 [manage-replicas.conf](https://github.com/cvmfs-contrib/cvmfs-manage-replicas/blob/master/manage-replicas.conf).
