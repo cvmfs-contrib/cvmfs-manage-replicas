@@ -8,7 +8,12 @@ rpm distributions of this package for CentOS/RHEL are available in
 
 To invoke from cron, use the additional script manage-replicas-log which
 allows $MAXPARALLELMANAGE replicas to happen in parallel and combines
-their output in `/var/log/cvmfs/manage-replicas.log`.
+their output in `/var/log/cvmfs/manage-replicas.log`.  Here's an example
+cron entry to put into `/etc/cron.d/cvmfs-manage-replicas` if using the
+default `add-repository` and `remove-repository` commands:
+```
+*/5 * * * * root PATH=$PATH:/usr/share/cvmfs-manage-replicas manage-replicas-log -c -f /etc/cvmfs/manage-replicas.conf
+```
 
 ## Example -- rebuilding a stratum 1
 
@@ -53,10 +58,10 @@ disappeared or gotten corrupted on the stratum 1 being copied.
 With the huge numbers of files involved, that is pretty typical.
 The files can be re-downloaded from some other stratum1 by hand.
 
-You'll need to edit /etc/cvmfs/repositories.d/*/server.conf after
-completion to copy the CVMFS_STRATUM0 setting on each repository from
-your original machine.
-Alternatively, if you manage all your repositories via
+After completion of the copy you'll need to edit
+/etc/cvmfs/repositories.d/*/server.conf to change the CVMFS_STRATUM0 setting
+on each repository from your original machine to the upstream stratum 0.
+Alternatively, if you continue to manage all your repositories via
 manage-replicas.conf, then when you copy manage-replicas.conf from your
 original machine the CVMFS_STRATUM0 settings will be automatically
 updated the next time manage-replicas runs.
