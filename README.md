@@ -35,6 +35,11 @@ replist http://stratum.one.fqdn:8000/cvmfs/info/v1/repositories.json
 source http://stratum.one.fqdn:8000
 repos *
 ```
+
+The source stratum 1 needs to have an empty `.cvmfs_master_replica`
+file in each repository copied, which can be manually created since
+normally those files are only on stratum 0 repositories.
+
 Then run `manage-replicas-log` 4 times with nohup in the background, and
 possibly also from cron in case some of the snaphots fail and it needs
 to be run again.
