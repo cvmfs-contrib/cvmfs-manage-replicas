@@ -1,6 +1,6 @@
 Summary: Manage cvmfs replicas
 Name: cvmfs-manage-replicas
-Version: 1.8
+Version: 1.9
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -32,6 +32,12 @@ install -p -m 555 add-repository remove-repository $RPM_BUILD_ROOT/%{_datadir}/c
 %{_datadir}/*
 
 %changelog
+* Fri Apr  5 2024 Dave Dykstra <dwd@fnal.gov> - 1.9-1
+- In order to determine whether a pub key is a symlink or not, count the
+  number of newlines instead of checking for an ending newline.  Otherwise
+  a pub key with missing ending newline can cause crazy behavior, trying
+  to execute lines of the public key in sh.
+
 * Thu Sep 30 2021 Dave Dykstra <dwd@fnal.gov> - 1.8-1
 - Make the -p option to cvmfs_server add-replica optional by making it a
   non-default option to add-repository
