@@ -180,7 +180,7 @@ def download_github_file(infile, outfile):
   except:
     return False
   answer = answer.decode()
-  if answer[-1] == '\n':
+  if answer.count('\n') > 0:
     try:
       with open(outfile, 'w') as fd:
         fd.write(answer)
@@ -188,7 +188,7 @@ def download_github_file(infile, outfile):
       logmsg('Error writing ' + outfile)
       return False
   else:
-    # does not end in newline, follow a symlink
+    # does not have a newline, follow a symlink
     infile = os.path.normpath(os.path.dirname(infile) + '/' + answer)
     cmd = 'curl -m 10 -f -s -o ' + outfile + \
                 ' https://raw.githubusercontent.com/' + infile
