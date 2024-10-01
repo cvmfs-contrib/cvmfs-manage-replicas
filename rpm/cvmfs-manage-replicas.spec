@@ -32,6 +32,8 @@ install -p -m 555 add-repository remove-repository $RPM_BUILD_ROOT/%{_datadir}/c
 %{_datadir}/*
 
 %changelog
+# - Support https URLs in add-repository.
+
 * Fri Apr  5 2024 Dave Dykstra <dwd@fnal.gov> - 1.9-1
 - In order to determine whether a pub key is a symlink or not, count the
   number of newlines instead of checking for an ending newline.  Otherwise

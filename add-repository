@@ -27,7 +27,7 @@ CREATEREPO=true
 REPONAME="$1"
 REPOURL=""
 case "$2" in
-    http://*) REPOURL="$2/cvmfs/$REPONAME";;
+    http*://*) REPOURL="$2/cvmfs/$REPONAME";;
     continue) CREATEREPO=false;;
     *)  usage ;;
 esac
